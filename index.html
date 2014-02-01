@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		
+		<style>
+		html, body {
+			height: 100%;
+			margin: 0;
+			font-family: Arial, Helvetica, sans-serif;
+		}
+		
+		#jogo {
+			position: absolute;
+			margin: auto;
+			top: 40px;
+			bottom: 0;
+			left: 0;
+			right: 0;
+		}
+		#jogo div {
+			background-image: url('imagem.png');
+			display: block;
+			position: absolute;
+		}
+		
+		#topo2 {
+			position: absolute;
+			top: 9px;
+			right: 8px;
+		}
+		
+		.esquerda { animation: esquerda_ 0.4s forwards; }
+		.direita  { animation: direita_  0.4s forwards; }
+		.cima     { animation: cima_     0.4s forwards; }
+		.baixo    { animation: baixo_    0.4s forwards; }
+		
+		@keyframes esquerda_ {
+			0%   { transform: translateX(0); }
+			100% { transform: translateX(calc(-100% - 1px)); }
+		}
+		
+		@keyframes direita_ {
+			0%   { transform: translateX(0); }
+			100% { transform: translateX(calc(100% + 1px)); }
+		}
+		
+		@keyframes cima_ {
+			0%   { transform: translateY(0); }
+			100% { transform: translateY(calc(-100% - 1px)); }
+		}
+		
+		@keyframes baixo_ {
+			0%   { transform: translateY(0); }
+			100% { transform: translateY(calc(100% + 1px)); }
+		}
+		
+		.onyx-toolbar {
+			background: url("gradient.png") repeat-x scroll 0 bottom / contain #4C4C4C;
+			border: 1px solid #3A3A3A;
+			color: #FFFFFF;
+			font-size: 20px;
+			overflow-y: visible;
+			padding: 9px 8px 10px;
+			white-space: nowrap;
+		}
+		.onyx {
+			background-color: #EAEAEA;
+			color: #333333;
+			cursor: default;
+			font-family: 'Helvetica Neue','Nimbus Sans L',Arial,sans-serif;
+			font-size: 20px;
+		}
+		</style>
+		
+		<script>
+		var lin = 4;
+		var col = 4;
+		
+		var movimentos = 0;
+		var inicio = (new Date).getTime();
+		
+		function min(a, b) { return a < b ? a : b; }
+		
+		var largura = window.innerWidth - 40;
+		var altura = window.innerHeight - 80;
+		
+		var tam = min(largura, altura);
+		
+		var lado = parseInt(tam / lin, 10);
+		var movendo = false;
+		var ultimo = lin*col - 1;
+		
+		var m = [];
+		var linha_atual = [];
+		var coluna_atual = [];
+		
+		for(var i = 0; i < lin; i++) {
+			m[i] = [];
+			for(var j = 0; j < col; j++) {
+				m[i][j] = i*col + j;
+				linha_atual[i*col + j] = i;
+				coluna_atual[i*col + j] = j;
+			}
+		}
+		
+		
+		function checa() {
+		
+			for(var i = 0; i < lin; i++) {
+				for(var j = 0; j < col; j++) {
+					if(m[i][j] != i*col + j)
+						return false;
+				}
+			}
+			
+			return true;
+		}
+		
+		
+		function move(peca) {
+			movendo = true;
+							
+			var linha = parseInt(peca.id.split("lin")[1].split("col")[0], 10);
+			var coluna = parseInt(peca.id.split("lin")[1].split("col")[1], 10);
+			
+			var qual = linha*col + coluna;
+			
+			linha = linha_atual[qual];
+			coluna = coluna_atual[qual];
+			
+			var temp = m[linha][coluna];
+										
+			// movendo para cima
+			if(linha > 0 && m[linha-1][coluna] == ultimo) {
+				linha_atual[qual]--;
+				m[linha][coluna] = m[linha-1][coluna];
+				m[linha-1][coluna] = temp;
+				peca.className = "cima";
+			}
+			
+			// movendo para baixo
+			else if(linha < lin-1 && m[linha+1][coluna] == ultimo) {
+				linha_atual[qual]++;
+				m[linha][coluna] = m[linha+1][coluna];
+				m[linha+1][coluna] = temp;
+				peca.className = "baixo";
+			}
+			
+			// movendo para a esquerda
+			else if(coluna > 0 && m[linha][coluna-1] == ultimo) {
+				coluna_atual[qual]--;
+				m[linha][coluna] = m[linha][coluna-1];
+				m[linha][coluna-1] = temp;
+				peca.className = "esquerda";
+			}
+			
+			// movendo para a direita
+			else if(coluna < col-1 && m[linha][coluna+1] == ultimo) {
+				coluna_atual[qual]++;
+				m[linha][coluna] = m[linha][coluna+1];
+				m[linha][coluna+1] = temp;
+				peca.className = "direita";
+			}
+			
+			// não movendo
+			else {
+				movendo = false;
+			}
+			
+			if(movendo) {
+				movimentos++;
+				document.getElementById("movimentos").innerHTML = movimentos;
+			}
+		}
+		
+		document.addEventListener("DOMContentLoaded", function() {
+		
+			document.getElementById("jogo").style.width = tam + "px";
+			document.getElementById("jogo").style.height = tam + "px";
+		
+			for(var i = 0; i < lin; i++) {
+				for(var j = 0; j < col; j++) {
+					var id = "lin" + i + "col" + j;
+					
+					var el = document.createElement("div");
+					el.style.width = lado-1 + "px";
+					el.style.height = lado-1 + "px";
+					el.style.backgroundSize = 100*lin + "%";
+					el.style.top = lado*i + "px";
+					el.style.left = lado*j + "px";
+					el.style.backgroundPosition = "-" + 100*j + "% -" + 100*i + "%";
+					el.id = id;
+					
+					// última parte não tem quadrado
+					if((i+1)*(j+1) - 1 == ultimo) {
+						continue;
+					}
+					
+					document.getElementById("jogo").appendChild(el);
+					
+					
+					document.getElementById(id).addEventListener("click", function() {
+						if(!movendo) move(this);
+					});
+					
+					document.getElementById(id).addEventListener("animationend", function() {
+						movendo = false;
+						
+						switch(this.className) {
+							case "esquerda":
+								this.style.left = parseInt(this.style.left, 10) - lado + "px";
+								break;
+							case "direita":
+								this.style.left = parseInt(this.style.left, 10) + lado + "px";
+								break;
+							case "cima":
+								this.style.top = parseInt(this.style.top, 10) - lado + "px";
+								break;
+							case "baixo":
+								this.style.top = parseInt(this.style.top, 10) + lado + "px";
+								break;
+						}
+						
+						this.removeAttribute("class");
+					});
+				}
+			}
+			
+			setInterval(function() {
+				document.getElementById("tempo").innerHTML = parseInt(((new Date).getTime() - inicio)/1000, 10);
+			}, 1000);
+		});
+		</script>
+	</head>
+	
+	<body>
+		<div id="topo" class="onyx onyx-toolbar onyx-toolbar-inline">
+			<div id="topo1">Movimentos: <span id="movimentos">0</span></div>
+			<div id="topo2">Tempo: <span id="tempo">0</span></div>
+		</div>
+		
+
+		
+		<div style="padding: 20px;">
+			<div id="jogo"></div>
+		</div>
+	</body>
+</html>
